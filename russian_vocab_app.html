@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a1d27">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Russian Vocab">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Russian Vocabulary Trainer — DOS Course</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --surface3:#2a2f45;
+  --accent:#6c8ef5; --accent2:#a78bfa; --green:#34d399; --red:#f87171;
+  --yellow:#fbbf24; --text:#e8eaf0; --text2:#9aa3c0; --text3:#5a6380;
+  --border:#2d3250; --radius:12px; --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px}
+#app{display:flex;flex-direction:column;min-height:100vh}
+
+/* Header */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.logo-sub{color:var(--text2);font-size:12px;font-weight:400}
+nav{display:flex;gap:4px}
+nav button{background:none;border:none;color:var(--text2);padding:6px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;transition:all .15s}
+nav button:hover{background:var(--surface2);color:var(--text)}
+nav button.active{background:var(--surface3);color:var(--accent)}
+
+main{flex:1;padding:28px 24px;max-width:1140px;margin:0 auto;width:100%}
+.tab{display:none}.tab.active{display:block}
+
+/* Panels */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.panel h2{font-size:18px;font-weight:600;margin-bottom:16px}
+.panel h3{font-size:15px;font-weight:600;margin-bottom:10px;color:var(--text2)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#5a7ef0}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{background:var(--surface3)}
+.btn-success{background:var(--green);color:#0f1117}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:5px 12px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Stats */
+.stats-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.stat-card{flex:1;min-width:100px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center}
+.stat-card .num{font-size:26px;font-weight:700;color:var(--accent)}
+.stat-card .lbl{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* Flashcard */
+.flashcard-wrap{perspective:1200px;width:100%;max-width:560px;height:260px;cursor:pointer;margin:0 auto}
+.flashcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.25,.8,.25,1)}
+.flashcard.flipped{transform:rotateY(180deg)}
+.fc-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;background:var(--surface);border:1px solid var(--border);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;box-shadow:var(--shadow)}
+.fc-back{transform:rotateY(180deg)}
+.fc-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.fc-word{font-size:32px;font-weight:700;margin-bottom:6px}
+.fc-hint{font-size:13px;color:var(--text2)}
+.fc-gram{font-size:12px;color:var(--text3);margin-top:6px}
+.fc-lesson{font-size:11px;color:var(--text3);margin-top:4px}
+
+.rating-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;justify-content:center}
+.rb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 18px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;min-width:80px}
+.rb-hard{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3)}.rb-hard:hover{background:rgba(248,113,113,.3)}
+.rb-ok{background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid rgba(251,191,36,.3)}.rb-ok:hover{background:rgba(251,191,36,.3)}
+.rb-easy{background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3)}.rb-easy:hover{background:rgba(52,211,153,.3)}
+.rb .em{font-size:20px}
+.session-info{font-size:13px;color:var(--text2);text-align:center;margin-bottom:10px}
+.prog-wrap{background:var(--surface3);border-radius:999px;height:7px;overflow:hidden}
+.prog{height:100%;background:var(--accent);border-radius:999px;transition:width .3s;width:0}
+
+/* Pills */
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.pill{padding:5px 13px;border-radius:999px;font-size:13px;font-weight:500;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s}
+.pill.active,.pill:hover{border-color:var(--accent);color:var(--accent);background:rgba(108,142,245,.1)}
+.mpill{padding:6px 14px;border-radius:999px;font-size:13px;font-weight:500;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer;transition:all .15s}
+.mpill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.mpill:not(.active):hover{border-color:var(--accent);color:var(--accent)}
+
+/* Forms */
+input[type=text],input[type=number],textarea,select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:14px;width:100%;outline:none;transition:border-color .15s}
+input[type=text]:focus,textarea:focus,input[type=number]:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:80px;font-family:inherit}
+label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+select option{background:var(--surface2)}
+.fg{margin-bottom:14px}
+
+/* Word table */
+.tbl-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.word-table{width:100%;border-collapse:collapse}
+.word-table th{background:var(--surface2);padding:10px 12px;text-align:left;font-size:12px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.word-table td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:14px}
+.word-table tr:last-child td{border-bottom:none}
+.word-table tr:hover td{background:var(--surface2)}
+.wru{font-size:16px;font-weight:500;color:var(--accent2)}
+.wgr{font-size:12px;color:var(--text3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+.bn{background:rgba(108,142,245,.15);color:var(--accent)}
+.bl{background:rgba(251,191,36,.15);color:var(--yellow)}
+.bk{background:rgba(52,211,153,.15);color:var(--green)}
+
+/* Quiz */
+.mc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:480px;margin:18px auto 0}
+.mc-btn{padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:15px;transition:all .15s;text-align:center}
+.mc-btn:hover{border-color:var(--accent);background:var(--surface3)}
+.mc-btn.correct{border-color:var(--green);background:rgba(52,211,153,.15);color:var(--green)}
+.mc-btn.wrong{border-color:var(--red);background:rgba(248,113,113,.15);color:var(--red)}
+.afb{font-size:16px;font-weight:600;text-align:center;margin-top:10px;min-height:22px}
+.afb.c{color:var(--green)}.afb.w{color:var(--red)}
+
+/* Import */
+.drop-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:rgba(108,142,245,.06)}
+.drop-zone .dz-icon{font-size:38px;margin-bottom:10px}
+.ext-list{max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-top:10px}
+.ext-item{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--border);font-size:13px}
+.ext-item:last-child{border-bottom:none}
+.ext-ru{font-size:15px;font-weight:500;color:var(--accent2)}
+.ext-en{color:var(--text2)}
+
+/* PDF viewer */
+.pdf-split{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:800px){.pdf-split{grid-template-columns:1fr}}
+#pdf-canvas-wrap{background:#fff;border-radius:8px;overflow:hidden;border:1px solid var(--border);max-height:500px;overflow-y:auto}
+#pdf-canvas-wrap canvas{display:block;width:100% !important;height:auto !important}
+.pdf-nav{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.pdf-nav span{font-size:13px;color:var(--text2)}
+
+/* Session complete */
+.sc-wrap{text-align:center;padding:36px 20px}
+.sc-emoji{font-size:60px;margin-bottom:14px}
+.sc-stats{display:flex;gap:20px;justify-content:center;margin:16px 0 24px;flex-wrap:wrap}
+.sc-stat .n{font-size:30px;font-weight:700}.sc-stat .l{font-size:13px;color:var(--text2)}
+
+/* Empty state */
+.empty{text-align:center;padding:48px 20px;color:var(--text2)}
+.empty .ei{font-size:46px;margin-bottom:14px}
+.empty p{max-width:340px;margin:0 auto 18px;line-height:1.6}
+
+/* Filter row */
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.filter-row input,.filter-row select{max-width:200px}
+
+/* Misc */
+hr{border:none;border-top:1px solid var(--border);margin:18px 0}
+.row{display:flex;gap:10px;align-items:center}
+.mla{margin-left:auto}
+small{font-size:12px;color:var(--text3)}
+.mg-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+kbd{background:var(--surface3);padding:2px 7px;border-radius:5px;font-size:12px}
+.prog-bar-wrap{background:var(--surface3);border-radius:999px;height:7px;overflow:hidden;margin:6px 0}
+code{color:var(--accent2);background:rgba(167,139,250,.1);padding:1px 5px;border-radius:4px;font-size:13px}
+
+#loading{position:fixed;inset:0;background:rgba(15,17,23,.85);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+.spin{width:42px;height:42px;border:4px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{margin-top:14px;color:var(--text2)}
+#toast-c{position:fixed;bottom:22px;right:22px;display:flex;flex-direction:column;gap:7px;z-index:9998}
+.toast{background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:11px 16px;font-size:14px;animation:si .2s;box-shadow:var(--shadow);max-width:300px}
+.toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}
+@keyframes si{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── Mobile / iPhone PWA ─────────────────────────────────────── */
+*{-webkit-tap-highlight-color:transparent}
+button,a,[role="button"]{touch-action:manipulation}
+#mobile-nav{display:none}
+
+@media(max-width:640px){
+  /* Header — hide desktop nav */
+  nav{display:none}
+  header{padding:0 14px;height:auto;min-height:50px;flex-wrap:wrap}
+  .logo{height:50px;font-size:15px}
+  .logo-sub{display:none}
+
+  /* Bottom tab bar */
+  #mobile-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:var(--surface);border-top:1px solid var(--border);
+    z-index:200;padding-bottom:env(safe-area-inset-bottom);
+  }
+  .mn-btn{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;padding:6px 4px 8px;
+    background:none;border:none;cursor:pointer;
+    color:var(--text2);font-size:10px;gap:2px;transition:color .15s;
+  }
+  .mn-btn.active{color:var(--accent)}
+  .mn-icon{font-size:20px;line-height:1}
+
+  /* Push content above bottom nav + safe area */
+  main{padding:16px 14px calc(70px + env(safe-area-inset-bottom))}
+
+  /* Prevent iOS auto-zoom on inputs (triggers at < 16px) */
+  input[type=text],input[type=number],textarea,select{font-size:16px}
+
+  /* Panels */
+  .panel{padding:16px 14px}
+
+  /* Stats cards */
+  .stats-row{gap:6px}
+  .stat-card{min-width:calc(33% - 4px);padding:10px 6px}
+  .stat-card .num{font-size:20px}
+  .stat-card .lbl{font-size:11px}
+
+  /* Flashcard */
+  .flashcard-wrap{height:210px}
+  .fc-word{font-size:26px}
+  .rating-row{gap:8px}
+  .rb{min-width:70px;padding:10px 12px;font-size:12px}
+  .rb .em{font-size:18px}
+
+  /* Quiz */
+  .mc-grid{max-width:100%}
+  .mc-btn{font-size:14px;padding:12px 8px}
+
+  /* Word table: horizontally scrollable */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .word-table{min-width:460px}
+
+  /* Add-word form */
+  .mg-grid{grid-template-columns:1fr 1fr}
+
+  /* Filter row */
+  .filter-row{flex-direction:column;align-items:stretch;gap:8px}
+  .filter-row input,.filter-row select{max-width:100%}
+
+  /* Settings grid */
+  .settings-grid{grid-template-columns:1fr !important}
+
+  /* Toast: above bottom nav */
+  #toast-c{right:14px;left:14px;bottom:calc(70px + env(safe-area-inset-bottom))}
+  .toast{max-width:100%}
+
+  /* Session complete stats */
+  .sc-stats{gap:14px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">
+    <span style="font-size:22px">🇷🇺</span>
+    <div>
+      <div>Russian Vocab Trainer</div>
+      <div class="logo-sub">DOS Course — Lessons 1–14</div>
+    </div>
+  </div>
+  <nav>
+    <button class="active" onclick="showTab('study')">Study</button>
+    <button onclick="showTab('quiz')">Quiz</button>
+    <button onclick="showTab('words')">Words</button>
+    <button onclick="showTab('import')">Import</button>
+    <button onclick="showTab('settings')">Settings</button>
+  </nav>
+</header>
+<main>
+
+<!-- ── STUDY TAB ─────────────────────────────────────────── -->
+<div id="tab-study" class="tab active">
+  <div class="stats-row">
+    <div class="stat-card"><div class="num" id="s-total">0</div><div class="lbl">Total</div></div>
+    <div class="stat-card"><div class="num" id="s-new" style="color:var(--accent)">0</div><div class="lbl">New</div></div>
+    <div class="stat-card"><div class="num" id="s-learning" style="color:var(--yellow)">0</div><div class="lbl">Learning</div></div>
+    <div class="stat-card"><div class="num" id="s-known" style="color:var(--green)">0</div><div class="lbl">Known</div></div>
+    <div class="stat-card"><div class="num" id="s-streak">0</div><div class="lbl">🔥 Streak</div></div>
+    <div class="stat-card"><div class="num" id="s-due" style="color:var(--yellow)">0</div><div class="lbl">Due Today</div></div>
+  </div>
+
+  <div id="selector" class="panel">
+    <div class="row" style="margin-bottom:16px">
+      <h2 style="margin:0">Start a Session</h2>
+      <div class="mla"><button class="btn btn-success btn-sm" id="start-btn" onclick="startSession()">▶ Start</button></div>
+    </div>
+    <div class="fg">
+      <label>Direction</label>
+      <div class="pills" id="dir-pills">
+        <span class="pill active" data-v="ru-en" onclick="setPill(this,'dir-pills')">🇷🇺→🇺🇸 Ru→En</span>
+        <span class="pill" data-v="en-ru" onclick="setPill(this,'dir-pills')">🇺🇸→🇷🇺 En→Ru</span>
+        <span class="pill" data-v="mixed" onclick="setPill(this,'dir-pills')">🔀 Mixed</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Lesson</label>
+      <div class="pills" id="lesson-pills">
+        <span class="pill active" data-v="all" onclick="setPill(this,'lesson-pills')">All</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Status filter</label>
+      <div class="pills" id="status-pills">
+        <span class="pill active" data-v="all" onclick="setPill(this,'status-pills')">All</span>
+        <span class="pill" data-v="new" onclick="setPill(this,'status-pills')">New only</span>
+        <span class="pill" data-v="learning" onclick="setPill(this,'status-pills')">Learning</span>
+        <span class="pill" data-v="due" onclick="setPill(this,'status-pills')">Due for review</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Cards per session</label>
+      <div class="pills" id="count-pills">
+        <span class="pill" data-v="10" onclick="setPill(this,'count-pills')">10</span>
+        <span class="pill active" data-v="20" onclick="setPill(this,'count-pills')">20</span>
+        <span class="pill" data-v="30" onclick="setPill(this,'count-pills')">30</span>
+        <span class="pill" data-v="50" onclick="setPill(this,'count-pills')">50</span>
+        <span class="pill" data-v="all" onclick="setPill(this,'count-pills')">All</span>
+      </div>
+    </div>
+    <small id="sel-count"></small>
+  </div>
+
+  <div id="fc-area" style="display:none">
+    <div class="session-info" id="fc-info">Card 1 of 20</div>
+    <div style="max-width:560px;margin:0 auto 10px">
+      <div class="prog-wrap"><div class="prog" id="fc-prog"></div></div>
+    </div>
+    <div class="flashcard-wrap" onclick="flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="fc-face fc-front">
+          <div class="fc-label" id="fc-fl">RUSSIAN</div>
+          <div class="fc-word" id="fc-fw">—</div>
+          <div class="fc-hint" id="fc-fh">click to reveal</div>
+          <div class="fc-gram" id="fc-fg"></div>
+          <div class="fc-lesson" id="fc-fls"></div>
+        </div>
+        <div class="fc-face fc-back">
+          <div class="fc-label" id="fc-bl">ENGLISH</div>
+          <div class="fc-word" id="fc-bw">—</div>
+          <div class="fc-hint" id="fc-bh"></div>
+          <div class="fc-gram" id="fc-bg"></div>
+        </div>
+      </div>
+    </div>
+    <div class="rating-row" id="rating-row" style="display:none">
+      <button class="rb rb-hard" onclick="rate('hard')"><span class="em">😓</span>Hard</button>
+      <button class="rb rb-ok" onclick="rate('ok')"><span class="em">🤔</span>Got it</button>
+      <button class="rb rb-easy" onclick="rate('easy')"><span class="em">😊</span>Easy</button>
+    </div>
+    <div style="text-align:center;margin-top:12px;display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-secondary btn-sm" onclick="flipCard()">Flip (Space)</button>
+      <button class="btn btn-secondary btn-sm" onclick="endSession()">End Session</button>
+    </div>
+  </div>
+
+  <div id="sc-area" style="display:none" class="panel">
+    <div class="sc-wrap">
+      <div class="sc-emoji">🎉</div>
+      <h2 style="font-size:22px;margin-bottom:6px">Session Complete!</h2>
+      <p style="color:var(--text2);margin-bottom:14px">Great work on your Russian vocabulary!</p>
+      <div class="sc-stats">
+        <div class="sc-stat"><div class="n" style="color:var(--green)" id="sc-e">0</div><div class="l">Easy</div></div>
+        <div class="sc-stat"><div class="n" style="color:var(--yellow)" id="sc-o">0</div><div class="l">Got it</div></div>
+        <div class="sc-stat"><div class="n" style="color:var(--red)" id="sc-h">0</div><div class="l">Hard</div></div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="startSession()">Another Session</button>
+        <button class="btn btn-secondary" onclick="backToSel()">Back</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── QUIZ TAB ───────────────────────────────────────────── -->
+<div id="tab-quiz" class="tab">
+  <div class="panel">
+    <div class="row" style="margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0">Quiz Mode</h2>
+      <div class="mla" style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="mpill active" data-qm="mc" onclick="setQMode(this)">Multiple Choice</button>
+        <button class="mpill" data-qm="type" onclick="setQMode(this)">Type Answer</button>
+      </div>
+    </div>
+    <div class="pills" id="ql-pills">
+      <span class="pill active" data-v="all" onclick="setPill(this,'ql-pills');genQ()">All</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <label style="margin:0;white-space:nowrap">Direction:</label>
+      <select id="q-dir" onchange="genQ()" style="max-width:200px">
+        <option value="ru-en">Russian → English</option>
+        <option value="en-ru">English → Russian</option>
+        <option value="mixed">Mixed</option>
+      </select>
+      <span style="margin-left:auto;font-size:13px;color:var(--text2)" id="q-score">Score: 0 / 0</span>
+    </div>
+    <div id="q-empty" class="empty" style="display:none">
+      <div class="ei">📚</div>
+      <p>No words yet. Import vocabulary first!</p>
+      <button class="btn btn-primary" onclick="showTab('import')">Go to Import</button>
+    </div>
+    <div id="q-content">
+      <div style="text-align:center;margin-bottom:4px">
+        <div class="fc-label" id="q-plabel">TRANSLATE TO ENGLISH</div>
+        <div style="font-size:34px;font-weight:700;margin:10px 0" id="q-word">—</div>
+        <div style="font-size:13px;color:var(--text2)" id="q-gram"></div>
+      </div>
+      <div id="mc-area"><div class="mc-grid" id="mc-opts"></div></div>
+      <div id="type-area" style="display:none">
+        <div style="display:flex;gap:8px;max-width:420px;margin:14px auto 0">
+          <input type="text" id="type-in" placeholder="Type your answer…" onkeydown="if(event.key==='Enter')chkType()" autocomplete="off" autocorrect="off" spellcheck="false" style="text-align:center;font-size:16px">
+          <button class="btn btn-primary" onclick="chkType()">Check</button>
+        </div>
+        <div class="afb" id="type-fb"></div>
+        <div style="text-align:center;margin-top:8px;display:none" id="type-next">
+          <button class="btn btn-secondary" onclick="genQ()">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── WORDS TAB ──────────────────────────────────────────── -->
+<div id="tab-words" class="tab">
+  <div class="panel">
+    <div class="row" style="margin-bottom:14px">
+      <h2 style="margin:0">Word List</h2>
+      <div class="mla row gap-4">
+        <button class="btn btn-secondary btn-sm" onclick="exportJ()">Export JSON</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button>
+      </div>
+    </div>
+    <div class="filter-row">
+      <input type="text" id="w-search" placeholder="Search…" oninput="renderWords()" style="max-width:200px">
+      <select id="w-lesson" onchange="renderWords()" style="max-width:160px"><option value="all">All Lessons</option></select>
+      <select id="w-status" onchange="renderWords()" style="max-width:140px">
+        <option value="all">All Status</option>
+        <option value="new">New</option>
+        <option value="learning">Learning</option>
+        <option value="known">Known</option>
+      </select>
+      <span id="w-count" style="font-size:13px;color:var(--text2)"></span>
+    </div>
+    <div id="words-empty" class="empty" style="display:none">
+      <div class="ei">📖</div>
+      <p>No vocabulary yet. Import words from your textbook PDFs or add them manually on the Import tab.</p>
+      <button class="btn btn-primary" onclick="showTab('import')">Import Vocabulary</button>
+    </div>
+    <div class="tbl-wrap" id="words-tbl-wrap">
+      <table class="word-table">
+        <thead><tr>
+          <th>Russian</th><th>English</th><th>Grammar</th><th>Lesson</th><th>Status</th><th>Actions</th>
+        </tr></thead>
+        <tbody id="w-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── IMPORT TAB ─────────────────────────────────────────── -->
+<div id="tab-import" class="tab">
+  <!-- PDF import with side-by-side viewer -->
+  <div class="panel">
+    <h2>Import from PDF Textbook</h2>
+    <p style="color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:14px">
+      Open a lesson Textbook PDF. The app scans the vocabulary list at the end and extracts Russian–English pairs. You can also browse any page in the viewer.
+    </p>
+    <div class="drop-zone" id="dz" onclick="document.getElementById('pdf-in').click()">
+      <input type="file" id="pdf-in" accept=".pdf" style="display:none" onchange="handlePDF(event)">
+      <div class="dz-icon">📄</div>
+      <p><strong>Click or drag a Textbook PDF here</strong></p>
+      <p style="color:var(--text2);font-size:13px;margin-top:4px">e.g. L01_Textbook.pdf … L14_Textbook.pdf</p>
+    </div>
+    <div id="pdf-status" style="margin-top:10px;font-size:13px;color:var(--text2)"></div>
+
+    <div id="pdf-viewer-area" style="display:none;margin-top:16px">
+      <div class="pdf-split">
+        <div>
+          <div class="pdf-nav">
+            <button class="btn btn-secondary btn-sm" onclick="changePage(-1)">← Prev</button>
+            <span id="pdf-page-info">Page 1 / 1</span>
+            <button class="btn btn-secondary btn-sm" onclick="changePage(1)">Next →</button>
+            <button class="btn btn-secondary btn-sm" onclick="jumpToEnd()">Jump to Vocab →</button>
+          </div>
+          <div id="pdf-canvas-wrap"><canvas id="pdf-canvas"></canvas></div>
+        </div>
+        <div>
+          <div class="row" style="margin-bottom:8px">
+            <h3 style="margin:0">Extracted Words</h3>
+            <div class="mla row">
+              <span id="ext-count" style="font-size:13px;color:var(--text2)"></span>
+              <button class="btn btn-primary btn-sm" onclick="importExtracted()" style="margin-left:8px">Add to Deck</button>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
+            <label style="margin:0;white-space:nowrap;font-size:13px">Lesson:</label>
+            <input type="number" id="ext-lesson" value="1" min="1" max="14" style="max-width:70px">
+          </div>
+          <div class="ext-list" id="ext-list" style="max-height:380px"></div>
+          <p style="font-size:12px;color:var(--text3);margin-top:6px">Review and edit words in the Words tab after importing.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk paste -->
+  <div class="panel">
+    <h2>Add Words Manually</h2>
+    <div class="fg">
+      <label>Bulk paste — one entry per line: <code>Russian — English</code> or <code>Russian | English</code></label>
+      <textarea id="bulk-in" placeholder="привет — hello&#10;спасибо — thank you&#10;пожалуйста — please / you're welcome"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+      <div class="fg" style="margin:0">
+        <label>Lesson</label>
+        <select id="bulk-lesson" style="max-width:120px">
+          <option value="1">Lesson 1</option><option value="2">Lesson 2</option><option value="3">Lesson 3</option>
+          <option value="4">Lesson 4</option><option value="5">Lesson 5</option><option value="6">Lesson 6</option>
+          <option value="7">Lesson 7</option><option value="8">Lesson 8</option><option value="9">Lesson 9</option>
+          <option value="10">Lesson 10</option><option value="11">Lesson 11</option><option value="12">Lesson 12</option>
+          <option value="13">Lesson 13</option><option value="14">Lesson 14</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="importBulk()">Import</button>
+    </div>
+    <hr>
+    <h3>Single Word</h3>
+    <div class="mg-grid">
+      <div><label>Russian</label><input type="text" id="m-ru" placeholder="слово" autocomplete="off" autocorrect="off" spellcheck="false"></div>
+      <div><label>English</label><input type="text" id="m-en" placeholder="word" onkeydown="if(event.key==='Enter')addWord()"></div>
+      <div><label>Grammar</label><input type="text" id="m-gr" placeholder="(m)" style="max-width:90px"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:10px;align-items:flex-end;flex-wrap:wrap">
+      <div><label>Lesson</label>
+        <select id="m-lesson" style="max-width:100px">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          <option value="13">13</option><option value="14">14</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="addWord()">Add Word</button>
+    </div>
+    <hr>
+    <h3>Import JSON Backup</h3>
+    <textarea id="json-in" placeholder='[{"ru":"привет","en":"hello","lesson":1}]'></textarea>
+    <button class="btn btn-secondary" onclick="importJSON()" style="margin-top:8px">Import JSON</button>
+  </div>
+</div>
+
+<!-- ── SETTINGS TAB ───────────────────────────────────────── -->
+<div id="tab-settings" class="tab">
+  <div class="panel">
+    <h2>Settings</h2>
+    <div class="settings-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div class="fg"><label>Show grammar on cards</label>
+          <select id="set-gram"><option value="yes">Yes</option><option value="no">No</option></select></div>
+        <div class="fg"><label>Spaced repetition</label>
+          <select id="set-srs"><option value="yes">Enabled (recommended)</option><option value="no">Disabled (random)</option></select></div>
+      </div>
+      <div>
+        <label>Keyboard shortcuts</label>
+        <div style="font-size:13px;color:var(--text2);line-height:2.2;margin-top:6px">
+          <div><kbd>Space</kbd> Flip card</div>
+          <div><kbd>1</kbd> Hard · <kbd>2</kbd> OK · <kbd>3</kbd> Easy</div>
+          <div><kbd>Enter</kbd> Submit quiz answer</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:4px">Save</button>
+  </div>
+  <div class="panel">
+    <h2>Load Starter Vocabulary</h2>
+    <p style="color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:14px">
+      Pre-loaded vocabulary covering key words for all 14 lessons of this DOS/FSI Russian course.
+      These are the core words you'll encounter; use the PDF Import to add the complete textbook lists on top.
+    </p>
+    <button class="btn btn-primary" onclick="loadStarter()">Load Starter Vocab (~500 words)</button>
+    <button class="btn btn-secondary" onclick="clearAll()" style="margin-left:8px">Reset All Progress</button>
+  </div>
+  <div class="panel">
+    <h2>About</h2>
+    <p style="color:var(--text2);font-size:14px;line-height:1.7">
+      Russian Vocabulary Trainer for the DOS/FSI Russian Language Course (Lessons 1–14).<br>
+      Implements a three-box spaced repetition system: <span style="color:var(--accent)">New</span> →
+      <span style="color:var(--yellow)">Learning</span> → <span style="color:var(--green)">Known</span>.<br>
+      PDF import uses <strong>PDF.js</strong> for accurate Cyrillic text extraction. Data is stored locally in your browser.
+    </p>
+  </div>
+</div>
+
+</main>
+
+<div id="mobile-nav">
+  <button class="mn-btn active" onclick="showTab('study')"><span class="mn-icon">🃏</span><span>Study</span></button>
+  <button class="mn-btn" onclick="showTab('quiz')"><span class="mn-icon">❓</span><span>Quiz</span></button>
+  <button class="mn-btn" onclick="showTab('words')"><span class="mn-icon">📝</span><span>Words</span></button>
+  <button class="mn-btn" onclick="showTab('import')"><span class="mn-icon">➕</span><span>Import</span></button>
+  <button class="mn-btn" onclick="showTab('settings')"><span class="mn-icon">⚙️</span><span>Settings</span></button>
+</div>
+
+</div>
+<div id="toast-c"></div>
+<div id="loading" style="display:none;flex-direction:column;align-items:center;justify-content:center">
+  <div class="spin"></div><p id="load-txt">Processing…</p>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── Data ──────────────────────────────────────────────────────────────────
+let vocab=[], settings={showGram:'yes',srs:'yes'}, streak=0;
+const SK='rus_vocab_v3', SET='rus_settings', STRK='rus_streak';
+
+function load(){
+  try{vocab=JSON.parse(localStorage.getItem(SK)||'[]')}catch(e){vocab=[]}
+  try{settings={...settings,...JSON.parse(localStorage.getItem(SET)||'{}')}}catch(e){}
+  try{
+    const sd=JSON.parse(localStorage.getItem(STRK)||'{}');
+    const today=new Date().toDateString();
+    const yest=new Date(Date.now()-86400000).toDateString();
+    streak=sd.date===today?sd.streak:sd.date===yest?(sd.streak||0):0;
+  }catch(e){}
+  applySettings(); updateStats(); renderLessonPills(); renderQPills();
+}
+function save(){localStorage.setItem(SK,JSON.stringify(vocab));updateStats()}
+function applySettings(){
+  document.getElementById('set-gram').value=settings.showGram;
+  document.getElementById('set-srs').value=settings.srs;
+}
+function saveSettings(){
+  settings.showGram=document.getElementById('set-gram').value;
+  settings.srs=document.getElementById('set-srs').value;
+  localStorage.setItem(SET,JSON.stringify(settings));toast('Settings saved','success');
+}
+function updStreak(){
+  const today=new Date().toDateString();
+  let sd={}; try{sd=JSON.parse(localStorage.getItem(STRK)||'{}')}catch(e){}
+  if(sd.date===today)return;
+  const yest=new Date(Date.now()-86400000).toDateString();
+  streak=sd.date===yest?(sd.streak||0)+1:1;
+  localStorage.setItem(STRK,JSON.stringify({date:today,streak}));
+  document.getElementById('s-streak').textContent=streak;
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+function updateStats(){
+  const now=Date.now();
+  const nw=vocab.filter(w=>!w.status||w.status==='new').length;
+  const lrn=vocab.filter(w=>w.status==='learning').length;
+  const kn=vocab.filter(w=>w.status==='known').length;
+  const due=vocab.filter(w=>w.nextReview&&w.nextReview<=now&&w.status!=='new').length;
+  document.getElementById('s-total').textContent=vocab.length;
+  document.getElementById('s-new').textContent=nw;
+  document.getElementById('s-learning').textContent=lrn;
+  document.getElementById('s-known').textContent=kn;
+  document.getElementById('s-streak').textContent=streak;
+  document.getElementById('s-due').textContent=due;
+  updateSelCount();
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const names=['study','quiz','words','import','settings'];
+  document.querySelectorAll('nav button')[names.indexOf(name)].classList.add('active');
+  document.querySelectorAll('#mobile-nav .mn-btn').forEach(b=>b.classList.remove('active'));
+  const mni=document.querySelectorAll('#mobile-nav .mn-btn')[names.indexOf(name)];
+  if(mni)mni.classList.add('active');
+  if(name==='words')renderWords();
+  if(name==='quiz'){renderQPills();genQ();}
+  if(name==='study'){backToSel();updateStats();}
+}
+
+// ── Pills helper ───────────────────────────────────────────────────────────
+function setPill(el,groupId){
+  document.querySelectorAll('#'+groupId+' .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  updateSelCount();
+}
+function getPill(groupId){
+  const el=document.querySelector('#'+groupId+' .pill.active');
+  return el?el.dataset.v:'all';
+}
+function renderLessonPills(){
+  const lessons=[...new Set(vocab.map(w=>w.lesson).filter(Boolean))].sort((a,b)=>a-b);
+  const lp=document.getElementById('lesson-pills');
+  if(lp){
+    const cur=getPill('lesson-pills');
+    lp.innerHTML='<span class="pill'+(cur==='all'?' active':'')+'" data-v="all" onclick="setPill(this,\'lesson-pills\')">All</span>'+
+      lessons.map(l=>`<span class="pill${cur===String(l)?' active':''}" data-v="${l}" onclick="setPill(this,'lesson-pills')">L${l}</span>`).join('');
+  }
+  const wl=document.getElementById('w-lesson');
+  if(wl){wl.innerHTML='<option value="all">All Lessons</option>'+lessons.map(l=>`<option value="${l}">Lesson ${l}</option>`).join('');}
+}
+function renderQPills(){
+  const lessons=[...new Set(vocab.map(w=>w.lesson).filter(Boolean))].sort((a,b)=>a-b);
+  const qp=document.getElementById('ql-pills');
+  if(qp){
+    const cur=getPill('ql-pills');
+    qp.innerHTML='<span class="pill'+(cur==='all'?' active':'')+'" data-v="all" onclick="setPill(this,\'ql-pills\');genQ()">All</span>'+
+      lessons.map(l=>`<span class="pill${cur===String(l)?' active':''}" data-v="${l}" onclick="setPill(this,'ql-pills');genQ()">L${l}</span>`).join('');
+  }
+}
+
+// ── Session ────────────────────────────────────────────────────────────────
+let cards=[], idx=0, results={easy:0,ok:0,hard:0}, flipped=false;
+
+function getFilteredForSession(){
+  const dir=getPill('lesson-pills'); const st=getPill('status-pills'); const now=Date.now();
+  return vocab.filter(w=>{
+    const ml=dir==='all'||String(w.lesson)===String(dir);
+    let ms=true;
+    if(st==='new') ms=!w.status||w.status==='new';
+    else if(st==='learning') ms=w.status==='learning';
+    else if(st==='due') ms=w.nextReview&&w.nextReview<=now;
+    return ml&&ms;
+  });
+}
+
+function updateSelCount(){
+  const words=getFilteredForSession();
+  const cnt=getPill('count-pills');
+  const max=cnt==='all'?words.length:Math.min(parseInt(cnt)||20,words.length);
+  const el=document.getElementById('sel-count');
+  if(el) el.textContent=`${max} cards will be shown (${words.length} matching your filters)`;
+}
+
+function startSession(){
+  if(vocab.length===0){toast('Import some vocabulary first!','error');showTab('import');return;}
+  let words=getFilteredForSession();
+  if(words.length===0){toast('No words match current filters','error');return;}
+  if(settings.srs==='yes'){
+    const now=Date.now();
+    words.sort((a,b)=>(a.nextReview||0)-(b.nextReview||0));
+  } else {
+    words=shuffle(words);
+  }
+  const cnt=getPill('count-pills');
+  const limit=cnt==='all'?words.length:Math.min(parseInt(cnt)||20,words.length);
+  cards=words.slice(0,limit);
+  idx=0; results={easy:0,ok:0,hard:0};
+  document.getElementById('selector').style.display='none';
+  document.getElementById('sc-area').style.display='none';
+  document.getElementById('fc-area').style.display='block';
+  showCard(); updStreak();
+}
+
+const DIR_MAP={
+  'ru-en':{front:'ru',back:'en',fl:'RUSSIAN',bl:'ENGLISH'},
+  'en-ru':{front:'en',back:'ru',fl:'ENGLISH',bl:'RUSSIAN'},
+};
+let curDir='ru-en';
+
+function showCard(){
+  const c=cards[idx];
+  if(!c){showSC();return;}
+  flipped=false;
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('rating-row').style.display='none';
+  const d=getPill('dir-pills');
+  curDir=d==='mixed'?(Math.random()<.5?'ru-en':'en-ru'):d;
+  const dm=DIR_MAP[curDir]||DIR_MAP['ru-en'];
+  document.getElementById('fc-fl').textContent=dm.fl;
+  document.getElementById('fc-fw').textContent=c[dm.front];
+  document.getElementById('fc-fh').textContent='click to reveal';
+  document.getElementById('fc-fg').textContent=settings.showGram==='yes'&&c.grammar?c.grammar:'';
+  document.getElementById('fc-fls').textContent=`Lesson ${c.lesson||'?'}`;
+  document.getElementById('fc-bl').textContent=dm.bl;
+  document.getElementById('fc-bw').textContent=c[dm.back];
+  document.getElementById('fc-bh').textContent='';
+  document.getElementById('fc-bg').textContent=settings.showGram==='yes'&&c.grammar?c.grammar:'';
+  const pct=(idx/cards.length)*100;
+  document.getElementById('fc-prog').style.width=pct+'%';
+  const cor=results.easy+results.ok;
+  document.getElementById('fc-info').textContent=`Card ${idx+1} of ${cards.length} · ${cor} correct`;
+}
+
+function flipCard(){
+  if(flipped)return;
+  flipped=true;
+  document.getElementById('flashcard').classList.add('flipped');
+  document.getElementById('fc-fh').textContent='';
+  document.getElementById('rating-row').style.display='flex';
+}
+
+function rate(r){
+  const c=cards[idx]; if(!c)return;
+  results[r]++;
+  const w=vocab.find(v=>v.id===c.id);
+  if(w){
+    w.reviews=(w.reviews||0)+1;
+    if(r==='easy'){w.status='known';w.easiness=Math.min(3,(w.easiness||2.5)+0.1);w.interval=Math.max(1,(w.interval||1))*(w.easiness||2.5);}
+    else if(r==='ok'){w.status=w.reviews>2?'known':'learning';w.easiness=w.easiness||2.5;w.interval=Math.max(1,(w.interval||1))*1.5;}
+    else{w.status='learning';w.easiness=Math.max(1.3,(w.easiness||2.5)-0.2);w.interval=1;}
+    w.nextReview=Date.now()+(w.interval||1)*86400000;
+    save();
+  }
+  idx++; setTimeout(showCard,200);
+}
+
+function showSC(){
+  document.getElementById('fc-area').style.display='none';
+  document.getElementById('sc-area').style.display='block';
+  document.getElementById('sc-e').textContent=results.easy;
+  document.getElementById('sc-o').textContent=results.ok;
+  document.getElementById('sc-h').textContent=results.hard;
+  save();
+}
+function endSession(){showSC();}
+function backToSel(){
+  document.getElementById('fc-area').style.display='none';
+  document.getElementById('sc-area').style.display='none';
+  document.getElementById('selector').style.display='block';
+  updateSelCount();
+}
+
+// ── Quiz ───────────────────────────────────────────────────────────────────
+let qMode='mc', qWord=null, qDir='ru-en', qCorrect=0, qTotal=0;
+
+function setQMode(btn){
+  document.querySelectorAll('.mpill[data-qm]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); qMode=btn.dataset.qm;
+  document.getElementById('mc-area').style.display=qMode==='mc'?'block':'none';
+  document.getElementById('type-area').style.display=qMode==='type'?'block':'none';
+  genQ();
+}
+
+function genQ(){
+  let pool=[...vocab];
+  const ql=getPill('ql-pills');
+  if(ql!=='all') pool=pool.filter(w=>String(w.lesson)===String(ql));
+  if(pool.length<2){
+    document.getElementById('q-empty').style.display='block';
+    document.getElementById('q-content').style.display='none';
+    return;
+  }
+  document.getElementById('q-empty').style.display='none';
+  document.getElementById('q-content').style.display='block';
+  const dv=document.getElementById('q-dir').value;
+  qDir=dv==='mixed'?(Math.random()<.5?'ru-en':'en-ru'):dv;
+  qWord=pool[Math.floor(Math.random()*pool.length)];
+  const prompt=qDir==='ru-en'?qWord.ru:qWord.en;
+  const lbl=qDir==='ru-en'?'TRANSLATE TO ENGLISH':'TRANSLATE TO RUSSIAN';
+  document.getElementById('q-plabel').textContent=lbl;
+  document.getElementById('q-word').textContent=prompt;
+  document.getElementById('q-gram').textContent=settings.showGram==='yes'&&qWord.grammar?qWord.grammar:'';
+  if(qMode==='mc') renderMC(pool);
+  if(qMode==='type'){
+    document.getElementById('type-in').value='';
+    document.getElementById('type-fb').textContent='';
+    document.getElementById('type-fb').className='afb';
+    document.getElementById('type-next').style.display='none';
+    setTimeout(()=>document.getElementById('type-in').focus(),50);
+  }
+  document.getElementById('q-score').textContent=`Score: ${qCorrect} / ${qTotal}`;
+}
+
+function renderMC(pool){
+  const correct=qDir==='ru-en'?qWord.en:qWord.ru;
+  const wrongs=shuffle(pool.filter(w=>w.id!==qWord.id)).slice(0,3).map(w=>qDir==='ru-en'?w.en:w.ru);
+  const opts=shuffle([correct,...wrongs]);
+  document.getElementById('mc-opts').innerHTML=opts.map(o=>
+    `<button class="mc-btn" onclick="chkMC(this,'${esc(o)}','${esc(correct)}')">${esc(o)}</button>`
+  ).join('');
+}
+
+function chkMC(btn,chosen,correct){
+  if(btn.classList.contains('correct')||btn.classList.contains('wrong'))return;
+  qTotal++;
+  document.querySelectorAll('.mc-btn').forEach(b=>b.onclick=null);
+  if(chosen===correct){
+    btn.classList.add('correct'); qCorrect++;
+    updateQWord(true); setTimeout(genQ,900);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.mc-btn').forEach(b=>{if(b.textContent===correct)b.classList.add('correct');});
+    updateQWord(false); setTimeout(genQ,1400);
+  }
+  document.getElementById('q-score').textContent=`Score: ${qCorrect} / ${qTotal}`;
+}
+
+function chkType(){
+  const inp=document.getElementById('type-in').value.trim();
+  const correct=qDir==='ru-en'?qWord.en:qWord.ru;
+  qTotal++; const fb=document.getElementById('type-fb'); const nxt=document.getElementById('type-next');
+  if(norm(inp)===norm(correct)){
+    fb.textContent='✓ Correct!'; fb.className='afb c'; qCorrect++;
+    updateQWord(true); setTimeout(genQ,700);
+  } else {
+    fb.textContent=`✗ Answer: ${correct}`; fb.className='afb w';
+    nxt.style.display='block'; updateQWord(false);
+  }
+  document.getElementById('q-score').textContent=`Score: ${qCorrect} / ${qTotal}`;
+}
+
+function updateQWord(correct){
+  if(!qWord) return;
+  const w=vocab.find(v=>v.id===qWord.id); if(!w) return;
+  w.reviews=(w.reviews||0)+1;
+  if(correct&&w.status!=='known') w.status=w.reviews>3?'known':'learning';
+  else if(!correct) w.status='learning';
+  save();
+}
+
+function norm(s){return s.toLowerCase().replace(/[.,!?;:'"()\[\]{}]/g,'').replace(/\s+/g,' ').trim();}
+
+// ── Word list ──────────────────────────────────────────────────────────────
+function renderWords(){
+  const search=(document.getElementById('w-search')?.value||'').toLowerCase();
+  const lesson=document.getElementById('w-lesson')?.value||'all';
+  const status=document.getElementById('w-status')?.value||'all';
+  const filtered=vocab.filter(w=>{
+    const ms=!search||w.ru.toLowerCase().includes(search)||w.en.toLowerCase().includes(search);
+    const ml=lesson==='all'||String(w.lesson)===lesson;
+    const mst=status==='all'||w.status===status||(!w.status&&status==='new');
+    return ms&&ml&&mst;
+  });
+  const empty=document.getElementById('words-empty');
+  const wrap=document.getElementById('words-tbl-wrap');
+  if(vocab.length===0){if(empty)empty.style.display='block';if(wrap)wrap.style.display='none';document.getElementById('w-count').textContent='';return;}
+  if(empty)empty.style.display='none';if(wrap)wrap.style.display='block';
+  document.getElementById('w-count').textContent=`${filtered.length} of ${vocab.length} words`;
+  const tbody=document.getElementById('w-tbody');
+  tbody.innerHTML=filtered.map(w=>{
+    const st=w.status||'new'; const bc=st==='known'?'bk':st==='learning'?'bl':'bn';
+    return `<tr><td><span class="wru">${esc(w.ru)}</span></td><td>${esc(w.en)}</td>
+      <td><span class="wgr">${esc(w.grammar||'')}</span></td>
+      <td>L${w.lesson||'?'}</td>
+      <td><span class="badge ${bc}">${st}</span></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="editW('${w.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="delW('${w.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function editW(id){
+  const w=vocab.find(v=>v.id===id); if(!w)return;
+  const ru=prompt('Russian:',w.ru); if(ru===null)return;
+  const en=prompt('English:',w.en); if(en===null)return;
+  const gr=prompt('Grammar (optional):',w.grammar||'');
+  w.ru=ru.trim()||w.ru; w.en=en.trim()||w.en; w.grammar=(gr||'').trim();
+  save(); renderWords(); toast('Updated','success');
+}
+function delW(id){
+  if(!confirm('Delete this word?'))return;
+  vocab=vocab.filter(v=>v.id!==id); save(); renderWords(); renderLessonPills(); toast('Deleted');
+}
+function clearAll(){
+  if(!confirm('Delete ALL vocabulary and progress? This cannot be undone.'))return;
+  vocab=[]; save(); renderWords(); renderLessonPills(); renderQPills(); toast('All words cleared');
+}
+function exportJ(){
+  const b=new Blob([JSON.stringify(vocab,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='russian_vocab.json'; a.click();
+  toast('Exported!','success');
+}
+
+// ── PDF import ─────────────────────────────────────────────────────────────
+let pdfDoc=null, pdfPage=1, extractedWords=[];
+
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');handlePDF({target:{files:e.dataTransfer.files}});});
+
+async function handlePDF(evt){
+  const file=evt.target.files[0]; if(!file||!file.name.endsWith('.pdf'))return;
+  const lm=file.name.match(/[Ll](?:esson[_-]?)?0?(\d{1,2})/);
+  if(lm) document.getElementById('ext-lesson').value=parseInt(lm[1]);
+  setLoading(true,`Reading ${file.name}…`);
+  document.getElementById('pdf-status').textContent=`📄 ${file.name} — loading…`;
+  try{
+    const buf=await file.arrayBuffer();
+    pdfDoc=await pdfjsLib.getDocument({data:buf}).promise;
+    const n=pdfDoc.numPages;
+    document.getElementById('pdf-status').textContent=`📄 ${file.name} — ${n} pages. Scanning vocabulary…`;
+    document.getElementById('pdf-viewer-area').style.display='block';
+    pdfPage=n; // Start at last page
+    await renderPDFPage(pdfPage);
+    // Extract from last ~25% of pages
+    const startP=Math.max(1,Math.floor(n*0.72));
+    const allLines=[];
+    for(let p=startP;p<=n;p++){
+      const page=await pdfDoc.getPage(p);
+      const tc=await page.getTextContent();
+      const lineMap={};
+      tc.items.forEach(item=>{
+        const y=Math.round(item.transform[5]);
+        if(!lineMap[y])lineMap[y]=[];
+        lineMap[y].push({text:item.str,x:item.transform[4]});
+      });
+      Object.keys(lineMap).sort((a,b)=>b-a).forEach(y=>{
+        const items=lineMap[y].sort((a,b)=>a.x-b.x);
+        const text=items.map(i=>i.text).join('').trim();
+        if(text) allLines.push({text,y:+y,x:items[0].x,page:p,items});
+      });
+    }
+    extractedWords=parseVocab(allLines);
+    setLoading(false);
+    renderExtracted();
+    document.getElementById('pdf-status').textContent=`✓ Scanned ${n-startP+1} pages. Found ${extractedWords.length} vocabulary entries.`;
+  }catch(err){
+    setLoading(false);
+    document.getElementById('pdf-status').textContent=`⚠ Error: ${err.message}`;
+    console.error(err);
+  }
+}
+
+async function renderPDFPage(p){
+  if(!pdfDoc)return;
+  pdfPage=Math.max(1,Math.min(p,pdfDoc.numPages));
+  document.getElementById('pdf-page-info').textContent=`Page ${pdfPage} / ${pdfDoc.numPages}`;
+  const page=await pdfDoc.getPage(pdfPage);
+  const canvas=document.getElementById('pdf-canvas');
+  const wrap=document.getElementById('pdf-canvas-wrap');
+  const vp=page.getViewport({scale:1});
+  const scale=wrap.clientWidth/vp.width;
+  const scaledVP=page.getViewport({scale});
+  canvas.height=scaledVP.height; canvas.width=scaledVP.width;
+  const ctx=canvas.getContext('2d');
+  await page.render({canvasContext:ctx,viewport:scaledVP}).promise;
+}
+function changePage(d){if(pdfDoc)renderPDFPage(pdfPage+d);}
+function jumpToEnd(){if(pdfDoc)renderPDFPage(pdfDoc.numPages);}
+
+function parseVocab(lines){
+  const words=[]; const seen=new Set();
+  const CYR=/[\u0400-\u04FF]/; const LAT=/[a-zA-Z]/;
+
+  // Method 1: dash-separated on one line
+  lines.forEach(line=>{
+    const t=line.text;
+    const m=t.match(/^([\u0400-\u04FF][\u0400-\u04FF\s\-]*?)\s*[—–\u2014\u2013]\s*(.+)$/);
+    if(m){
+      const ru=m[1].trim(), en=m[2].trim();
+      if(CYR.test(ru)&&LAT.test(en)&&en.length>1){
+        const key=`${ru}|${en}`;
+        if(!seen.has(key)){seen.add(key);words.push({ru:cleanW(ru),en:cleanW(en),grammar:extGram(t)});}
+      }
+    }
+  });
+
+  // Method 2: column layout (Cyrillic left column, English right column)
+  lines.forEach(line=>{
+    if(!line.items||line.items.length<2)return;
+    const cyrParts=line.items.filter(i=>CYR.test(i.text));
+    const latParts=line.items.filter(i=>LAT.test(i.text)&&!CYR.test(i.text));
+    if(cyrParts.length>0&&latParts.length>0){
+      const ru=cyrParts.map(i=>i.text).join('').trim();
+      const en=latParts.map(i=>i.text).join(' ').trim();
+      if(ru.length>=2&&en.length>1){
+        const key=`${ru}|${en}`;
+        if(!seen.has(key)){seen.add(key);words.push({ru:cleanW(ru),en:cleanW(en),grammar:extGram(ru+en)});}
+      }
+    }
+  });
+
+  // Method 3: alternating Cyrillic/Latin lines
+  for(let i=0;i<lines.length-1;i++){
+    const cur=lines[i], nxt=lines[i+1];
+    if(CYR.test(cur.text)&&!LAT.test(cur.text)&&LAT.test(nxt.text)&&!CYR.test(nxt.text)&&nxt.text.length>1){
+      const key=`${cur.text}|${nxt.text}`;
+      if(!seen.has(key)){
+        seen.add(key);
+        words.push({ru:cleanW(cur.text),en:cleanW(nxt.text),grammar:extGram(cur.text+nxt.text)});
+        i++;
+      }
+    }
+  }
+  return words.filter(w=>w.ru.length>=2&&w.en.length>=2&&w.ru.length<80&&w.en.length<100);
+}
+
+function cleanW(s){return s.replace(/^\s*[\d.\-*]+\s*/,'').trim().replace(/\s+/g,' ');}
+function extGram(s){const m=s.match(/\((m|f|n|pl|v|adj|adv|prep|conj|pron)\)/i);return m?'('+m[1].toLowerCase()+')':'';}
+
+function renderExtracted(){
+  const list=document.getElementById('ext-list');
+  const count=document.getElementById('ext-count');
+  count.textContent=`${extractedWords.length} words`;
+  list.innerHTML=extractedWords.map((w,i)=>`
+    <div class="ext-item">
+      <span class="ext-ru">${esc(w.ru)}</span>
+      <span class="ext-en">${esc(w.en)}${w.grammar?' <small>'+esc(w.grammar)+'</small>':''}</span>
+      <button class="btn btn-danger btn-sm" onclick="rmExt(${i})" style="padding:3px 8px;font-size:11px">✕</button>
+    </div>`).join('');
+}
+function rmExt(i){extractedWords.splice(i,1);renderExtracted();}
+function importExtracted(){
+  if(!extractedWords.length){toast('Nothing to import','error');return;}
+  const lesson=parseInt(document.getElementById('ext-lesson').value)||1;
+  let added=0;
+  extractedWords.forEach(w=>{
+    if(!vocab.some(v=>v.ru===w.ru&&v.lesson===lesson)){
+      vocab.push({id:uid(),ru:w.ru,en:w.en,grammar:w.grammar||'',lesson,status:'new',reviews:0,easiness:2.5,interval:1});
+      added++;
+    }
+  });
+  save(); renderWords(); renderLessonPills(); renderQPills();
+  toast(`Added ${added} words from Lesson ${lesson}!`,'success');
+  extractedWords=[]; renderExtracted();
+}
+
+// ── Manual import ─────────────────────────────────────────────────────────
+function importBulk(){
+  const text=document.getElementById('bulk-in').value.trim();
+  const lesson=parseInt(document.getElementById('bulk-lesson').value)||1;
+  if(!text){toast('Paste some vocabulary','error');return;}
+  let added=0;
+  text.split('\n').map(l=>l.trim()).filter(l=>l).forEach(line=>{
+    const parts=line.split(/\s*[—–|]\s*|\t/).map(p=>p.trim()).filter(p=>p);
+    if(parts.length>=2){
+      const[ru,en]=parts;
+      if(!vocab.some(v=>v.ru===ru&&v.lesson===lesson)){
+        vocab.push({id:uid(),ru,en,grammar:'',lesson,status:'new',reviews:0,easiness:2.5,interval:1});
+        added++;
+      }
+    }
+  });
+  save(); renderWords(); renderLessonPills(); renderQPills();
+  document.getElementById('bulk-in').value='';
+  toast(`Added ${added} words to Lesson ${lesson}!`,'success');
+}
+
+function addWord(){
+  const ru=document.getElementById('m-ru').value.trim();
+  const en=document.getElementById('m-en').value.trim();
+  const gr=document.getElementById('m-gr').value.trim();
+  const lesson=parseInt(document.getElementById('m-lesson').value)||1;
+  if(!ru||!en){toast('Enter both Russian and English','error');return;}
+  if(vocab.some(v=>v.ru===ru&&v.lesson===lesson)){toast('Already exists in this lesson','error');return;}
+  vocab.push({id:uid(),ru,en,grammar:gr,lesson,status:'new',reviews:0,easiness:2.5,interval:1});
+  save(); renderWords(); renderLessonPills(); renderQPills();
+  document.getElementById('m-ru').value=''; document.getElementById('m-en').value='';
+  document.getElementById('m-gr').value=''; document.getElementById('m-ru').focus();
+  toast(`Added: ${ru} — ${en}`,'success');
+}
+
+function importJSON(){
+  try{
+    const data=JSON.parse(document.getElementById('json-in').value);
+    if(!Array.isArray(data))throw new Error('Expected array');
+    let added=0;
+    data.forEach(w=>{
+      if(w.ru&&w.en){
+        const lesson=parseInt(w.lesson)||1;
+        if(!vocab.some(v=>v.ru===w.ru&&v.lesson===lesson)){
+          vocab.push({id:uid(),ru:w.ru,en:w.en,grammar:w.grammar||'',lesson,
+            status:w.status||'new',reviews:w.reviews||0,easiness:w.easiness||2.5,interval:w.interval||1,nextReview:w.nextReview});
+          added++;
+        }
+      }
+    });
+    save(); renderWords(); renderLessonPills(); renderQPills();
+    document.getElementById('json-in').value='';
+    toast(`Imported ${added} words!`,'success');
+  }catch(e){toast('Invalid JSON: '+e.message,'error');}
+}
+
+// ── Starter vocabulary ─────────────────────────────────────────────────────
+const STARTER=[
+// L1: Introductions, Alphabet, Basics
+["меня зовут","my name is","",1],["здравствуйте","hello (formal)","",1],["привет","hi (informal)","",1],
+["до свидания","goodbye","",1],["пока","bye (informal)","",1],["спасибо","thank you","",1],
+["пожалуйста","please / you're welcome","",1],["да","yes","",1],["нет","no","",1],
+["и","and","",1],["или","or","",1],["это","this / that / it","",1],
+["я","I","",1],["вы","you (formal/plural)","",1],["ты","you (informal)","",1],
+["он","he","",1],["она","she","",1],["мы","we","",1],["они","they","",1],
+["американец / американка","American","(m/f)",1],["русский / русская","Russian","(m/f)",1],
+["дипломат","diplomat","(m)",1],["студент / студентка","student","(m/f)",1],
+["как вас зовут","what is your name","",1],["откуда вы","where are you from","",1],
+["очень приятно","nice to meet you","",1],["рад/рада познакомиться","glad to meet you","",1],
+["говорить / сказать","to speak / to say","(v)",1],["понимать / понять","to understand","(v)",1],
+["знать","to know","(v)",1],["учить / выучить","to study/learn","(v)",1],
+// L2: Family, Numbers, Professions
+["семья","family","(f)",2],["муж","husband","(m)",2],["жена","wife","(f)",2],
+["сын","son","(m)",2],["дочь","daughter","(f)",2],["мать","mother","(f)",2],
+["отец","father","(m)",2],["брат","brother","(m)",2],["сестра","sister","(f)",2],
+["ребёнок","child","(m)",2],["дети","children","(pl)",2],
+["преподаватель","teacher/lecturer","(m)",2],["врач","doctor","(m)",2],
+["инженер","engineer","(m)",2],["бизнесмен","businessman","(m)",2],
+["один","one","",2],["два","two","",2],["три","three","",2],
+["четыре","four","",2],["пять","five","",2],["шесть","six","",2],
+["семь","seven","",2],["восемь","eight","",2],["девять","nine","",2],["десять","ten","",2],
+["работать","to work","(v)",2],["жить","to live","(v)",2],
+["любить","to love/like","(v)",2],["иметь","to have","(v)",2],
+// L3: Location, City, Directions
+["здесь","here","",3],["там","there","",3],["где","where","",3],
+["направо","to the right","",3],["налево","to the left","",3],["прямо","straight ahead","",3],
+["улица","street","(f)",3],["площадь","square/plaza","(f)",3],["метро","metro/subway","(n)",3],
+["магазин","store","(m)",3],["банк","bank","(m)",3],["ресторан","restaurant","(m)",3],
+["гостиница","hotel","(f)",3],["посольство","embassy","(n)",3],
+["рядом","nearby","",3],["далеко","far","",3],["близко","close","",3],
+["налево","to the left","",3],["направо","to the right","",3],
+["идти","to go (on foot)","(v)",3],["ехать","to go (by vehicle)","(v)",3],
+["возвращаться","to return","(v)",3],
+// L4: Time, Schedule, Days
+["сегодня","today","",4],["завтра","tomorrow","",4],["вчера","yesterday","",4],
+["сейчас","now","",4],["потом","then/later","",4],["всегда","always","",4],
+["никогда","never","",4],["часто","often","",4],["иногда","sometimes","",4],
+["понедельник","Monday","(m)",4],["вторник","Tuesday","(m)",4],["среда","Wednesday","(f)",4],
+["четверг","Thursday","(m)",4],["пятница","Friday","(f)",4],["суббота","Saturday","(f)",4],["воскресенье","Sunday","(n)",4],
+["час","hour/o'clock","(m)",4],["минута","minute","(f)",4],["утро","morning","(n)",4],
+["день","day/afternoon","(m)",4],["вечер","evening","(m)",4],["ночь","night","(f)",4],
+["начинаться","to begin","(v)",4],["заканчиваться","to end","(v)",4],
+// L5: Food, Shopping, Everyday
+["хлеб","bread","(m)",5],["молоко","milk","(n)",5],["вода","water","(f)",5],
+["кофе","coffee","(m)",5],["чай","tea","(m)",5],["суп","soup","(m)",5],
+["мясо","meat","(n)",5],["рыба","fish","(f)",5],["овощи","vegetables","(pl)",5],
+["фрукты","fruits","(pl)",5],["сколько стоит","how much does it cost","",5],
+["дорого","expensive","",5],["дёшево","cheap","",5],["рубль","ruble","(m)",5],
+["покупать / купить","to buy","(v)",5],["продавать / продать","to sell","(v)",5],
+["платить / заплатить","to pay","(v)",5],
+// L6: Home, Apartment
+["квартира","apartment","(f)",6],["дом","house/building","(m)",6],
+["комната","room","(f)",6],["кухня","kitchen","(f)",6],["спальня","bedroom","(f)",6],
+["гостиная","living room","(f)",6],["ванная","bathroom","(f)",6],
+["стол","table","(m)",6],["стул","chair","(m)",6],["диван","sofa","(m)",6],
+["окно","window","(n)",6],["дверь","door","(f)",6],
+["жить","to live","(v)",6],["снимать","to rent","(v)",6],
+// L7: Daily Routines, Verbs of Motion
+["просыпаться / проснуться","to wake up","(v)",7],["вставать / встать","to get up","(v)",7],
+["умываться / умыться","to wash up","(v)",7],["одеваться / одеться","to get dressed","(v)",7],
+["завтракать / позавтракать","to have breakfast","(v)",7],
+["обедать / пообедать","to have lunch","(v)",7],
+["ужинать / поужинать","to have dinner","(v)",7],
+["ложиться / лечь спать","to go to bed","(v)",7],
+["делать / сделать","to do/make","(v)",7],["готовить / приготовить","to cook","(v)",7],
+["убирать / убрать","to clean up","(v)",7],["гулять / погулять","to go for a walk","(v)",7],
+["ходить / идти","to go/walk (regular/one-way)","(v)",7],
+["ездить / ехать","to go/ride (regular/one-way)","(v)",7],
+["тело","body","(n)",7],["голова","head","(f)",7],["рука","hand/arm","(f)",7],
+["нога","foot/leg","(f)",7],["глаза","eyes","(pl)",7],["уши","ears","(pl)",7],
+["распорядок дня","daily routine","(m)",7],["домашнее задание","homework","(n)",7],
+["расписание","schedule","(n)",7],
+// L8: Dining Out, Food Culture
+["меню","menu","(n)",8],["официант","waiter","(m)",8],["счёт","bill/check","(m)",8],
+["заказывать / заказать","to order","(v)",8],["заплатить","to pay","(v)",8],
+["блюдо","dish/course","(n)",8],["закуска","appetizer/snack","(f)",8],
+["первое","first course (soup)","(n)",8],["второе","main course","(n)",8],
+["десерт","dessert","(m)",8],["напиток","drink/beverage","(m)",8],
+["борщ","borscht","(m)",8],["пельмени","dumplings","(pl)",8],
+["пироги","pies","(pl)",8],["блины","pancakes","(pl)",8],
+["икра","caviar","(f)",8],["салат","salad","(m)",8],
+["вилка","fork","(f)",8],["ложка","spoon","(f)",8],["нож","knife","(m)",8],
+["тарелка","plate","(f)",8],["стакан","glass","(m)",8],["бокал","wine glass","(m)",8],
+["вкусный","delicious/tasty","(adj)",8],["свежий","fresh","(adj)",8],
+["острый","spicy/sharp","(adj)",8],["сладкий","sweet","(adj)",8],
+// L9: Health, Medical
+["здоровье","health","(n)",9],["болеть","to be sick / to hurt","(v)",9],
+["боль","pain","(f)",9],["голова болит","head hurts","",9],
+["температура","temperature/fever","(f)",9],["насморк","runny nose","(m)",9],
+["кашель","cough","(m)",9],["аллергия","allergy","(f)",9],
+["врач","doctor","(m)",9],["больница","hospital","(f)",9],["аптека","pharmacy","(f)",9],
+["лекарство","medicine","(n)",9],["таблетка","tablet/pill","(f)",9],
+["рецепт","prescription/recipe","(m)",9],
+["чувствовать себя","to feel (oneself)","(v)",9],
+["хорошо","well/good","",9],["плохо","badly/bad","",9],["лучше","better","",9],
+["хуже","worse","",9],["нужно","(it is) necessary","",9],
+["если бы","if (conditional)","",9],["чтобы","in order to","",9],
+// L10: Education, Academic Life
+["школа","school","(f)",10],["университет","university","(f)",10],
+["институт","institute","(m)",10],["факультет","faculty/department","(m)",10],
+["лекция","lecture","(f)",10],["семинар","seminar","(m)",10],
+["экзамен","exam","(m)",10],["зачёт","test/credit","(m)",10],
+["оценка","grade/evaluation","(f)",10],["диплом","diploma","(m)",10],
+["математика","mathematics","(f)",10],["физика","physics","(f)",10],
+["химия","chemistry","(f)",10],["биология","biology","(f)",10],
+["история","history","(f)",10],["экономика","economics","(f)",10],
+["политология","political science","(f)",10],["международные отношения","international relations","(pl)",10],
+["поступать / поступить","to enroll/enter (institution)","(v)",10],
+["сдавать / сдать","to pass (exam)","(v)",10],
+["который","which/that (relative)","",10],["потому что","because","",10],
+// L11: Travel, Transportation
+["аэропорт","airport","(m)",11],["самолёт","airplane","(m)",11],
+["поезд","train","(m)",11],["автобус","bus","(m)",11],["такси","taxi","(n)",11],
+["метро","metro","(n)",11],["машина","car","(f)",11],
+["билет","ticket","(m)",11],["паспорт","passport","(m)",11],["виза","visa","(f)",11],
+["гостиница","hotel","(f)",11],["номер","room/number","(m)",11],
+["путешествовать","to travel","(v)",11],["лететь / летать","to fly","(v)",11],
+["приезжать / приехать","to arrive (by vehicle)","(v)",11],
+["уезжать / уехать","to leave (by vehicle)","(v)",11],
+["пересадка","transfer/connection","(f)",11],["таможня","customs","(f)",11],
+["карта","map","(f)",11],["туристический","tourist","(adj)",11],
+["сравнительная степень","comparative degree","",11],["быстрее","faster","",11],
+// L12: Work, Careers
+["работа","work/job","(f)",12],["офис","office","(m)",12],
+["компания","company","(f)",12],["фирма","firm","(f)",12],
+["должность","position/post","(f)",12],["карьера","career","(f)",12],
+["резюме","resume/CV","(n)",12],["собеседование","interview","(n)",12],
+["зарплата","salary","(f)",12],["отпуск","vacation/leave","(m)",12],
+["коллега","colleague","(m/f)",12],["начальник","boss/head","(m)",12],
+["сотрудник","employee/colleague","(m)",12],["служащий","employee/official","(m)",12],
+["заниматься","to engage in / study","(v)",12],["нанимать / нанять","to hire","(v)",12],
+["увольнять / уволить","to fire","(v)",12],
+["совещание","meeting","(n)",12],["командировка","business trip","(f)",12],
+["профессиональный","professional","(adj)",12],
+["работать врачом","to work as a doctor","",12],
+// L13: Arts, Culture, Entertainment
+["театр","theater","(m)",13],["кино / кинотеатр","cinema","(n/m)",13],
+["музей","museum","(m)",13],["выставка","exhibition","(f)",13],
+["концерт","concert","(m)",13],["спектакль","performance/show","(m)",13],
+["опера","opera","(f)",13],["балет","ballet","(m)",13],
+["фильм","film/movie","(m)",13],["книга","book","(f)",13],
+["роман","novel","(m)",13],["рассказ","short story","(m)",13],
+["стихотворение","poem","(n)",13],["музыка","music","(f)",13],
+["художник","artist/painter","(m)",13],["писатель","writer","(m)",13],
+["актёр","actor","(m)",13],["режиссёр","director","(m)",13],
+["нравиться / понравиться","to like / to please","(v)",13],
+["рекомендовать","to recommend","(v)",13],["советовать","to advise","(v)",13],
+["по мнению","in the opinion of","",13],["думаю, что","I think that","",13],
+["деепричастие","verbal adverb (gerund)","(n)",13],
+// L14: Media, Society, Politics
+["новости","news","(pl)",14],["газета","newspaper","(f)",14],
+["журнал","magazine","(m)",14],["телевидение","television","(n)",14],
+["радио","radio","(n)",14],["интернет","internet","(m)",14],
+["статья","article","(f)",14],["репортаж","report","(m)",14],
+["журналист","journalist","(m)",14],["редактор","editor","(m)",14],
+["правительство","government","(n)",14],["президент","president","(m)",14],
+["министр","minister","(m)",14],["парламент","parliament","(m)",14],
+["выборы","elections","(pl)",14],["голосовать","to vote","(v)",14],
+["экономика","economy","(f)",14],["общество","society","(n)",14],
+["окружающая среда","environment","(f)",14],["изменение климата","climate change","(n)",14],
+["по моему мнению","in my opinion","",14],["следует","one should/ought to","",14],
+["проблема","problem","(f)",14],["решение","solution/decision","(n)",14],
+];
+
+function loadStarter(){
+  let added=0;
+  STARTER.forEach(([ru,en,grammar,lesson])=>{
+    if(!vocab.some(v=>v.ru===ru&&v.lesson===lesson)){
+      vocab.push({id:uid(),ru,en,grammar,lesson,status:'new',reviews:0,easiness:2.5,interval:1});
+      added++;
+    }
+  });
+  save(); renderWords(); renderLessonPills(); renderQPills();
+  toast(`Loaded ${added} starter words across all 14 lessons!`,'success');
+  showTab('study');
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+function uid(){return Math.random().toString(36).substr(2,9)+Date.now().toString(36);}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(msg,type=''){
+  const c=document.getElementById('toast-c');
+  const el=document.createElement('div'); el.className='toast'+(type?' '+type:''); el.textContent=msg;
+  c.appendChild(el); setTimeout(()=>el.remove(),3000);
+}
+function setLoading(show,txt='Processing…'){
+  const el=document.getElementById('loading'); el.style.display=show?'flex':'none';
+  document.getElementById('load-txt').textContent=txt;
+}
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
+  const tab=document.querySelector('.tab.active').id;
+  if(tab==='tab-study'&&document.getElementById('fc-area').style.display!=='none'){
+    if(e.code==='Space'){e.preventDefault();flipCard();}
+    if(flipped){if(e.key==='1')rate('hard');if(e.key==='2')rate('ok');if(e.key==='3')rate('easy');}
+  }
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+load();
+
+// Prompt first-time users
+if(vocab.length===0){
+  setTimeout(()=>{
+    if(confirm('Welcome to Russian Vocab Trainer!\n\nLoad the starter vocabulary (~500 words across all 14 lessons) to get started right away?')){
+      loadStarter();
+    }
+  },500);
+}
+
+// Register service worker for offline / PWA support
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>

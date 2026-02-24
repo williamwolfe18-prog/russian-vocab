@@ -1,0 +1,24 @@
+{
+  "name": "Russian Vocabulary Trainer",
+  "short_name": "Russian Vocab",
+  "description": "Vocabulary trainer for the DOS/FSI Russian Language Course (Lessons 1–14)",
+  "start_url": "./russian_vocab_app.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1117",
+  "theme_color": "#1a1d27",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
