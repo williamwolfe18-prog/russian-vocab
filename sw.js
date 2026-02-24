@@ -1,4 +1,4 @@
-const CACHE = 'russian-vocab-v1';
+const CACHE = 'russian-vocab-v2';
 const APP_FILES = ['./russian_vocab_app.html'];
 
 self.addEventListener('install', e => {

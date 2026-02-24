@@ -497,6 +497,46 @@ button,a,[role="button"]{touch-action:manipulation}
     </div>
   </div>
 
+  <!-- Camera / Photo OCR import -->
+  <div class="panel">
+    <h2>Import from Photo / Camera</h2>
+    <p style="color:var(--text2);font-size:14px;line-height:1.6;margin-bottom:14px">
+      Take a photo of a vocabulary list or point your camera at any Russian–English text. The app reads the words using OCR. Works best with clear, printed text in good lighting.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <label class="btn btn-primary" style="cursor:pointer">
+        📷 Take Photo / Choose Image
+        <input type="file" id="ocr-in" accept="image/*" style="display:none" onchange="handleOCRImage(event)">
+      </label>
+    </div>
+
+    <div id="ocr-area" style="display:none">
+      <img id="ocr-preview" style="max-width:100%;max-height:280px;border-radius:8px;border:1px solid var(--border);display:block;margin-bottom:12px">
+      <div id="ocr-status" style="font-size:13px;color:var(--text2);margin-bottom:8px"></div>
+      <div class="prog-wrap" id="ocr-prog-wrap" style="display:none;margin-bottom:14px"><div class="prog" id="ocr-prog"></div></div>
+
+      <div id="ocr-words-area" style="display:none">
+        <div class="row" style="margin-bottom:8px">
+          <h3 style="margin:0">Extracted Words</h3>
+          <div class="mla row">
+            <span id="ocr-count" style="font-size:13px;color:var(--text2)"></span>
+            <button class="btn btn-primary btn-sm" onclick="importOCR()" style="margin-left:8px">Add to Deck</button>
+          </div>
+        </div>
+        <div style="margin-bottom:8px;display:flex;gap:8px;align-items:center">
+          <label style="margin:0;white-space:nowrap;font-size:13px">Lesson:</label>
+          <input type="number" id="ocr-lesson" value="1" min="1" max="14" style="max-width:70px">
+        </div>
+        <div class="ext-list" id="ocr-list" style="max-height:300px"></div>
+        <details style="margin-top:12px">
+          <summary style="font-size:13px;color:var(--text2);cursor:pointer;margin-bottom:6px">Raw OCR text (edit &amp; re-parse if needed)</summary>
+          <textarea id="ocr-raw" style="min-height:90px;font-size:13px;margin-top:6px"></textarea>
+          <button class="btn btn-secondary btn-sm" onclick="reparseOCR()" style="margin-top:6px">↺ Re-parse</button>
+        </details>
+      </div>
+    </div>
+  </div>
+
   <!-- Bulk paste -->
   <div class="panel">
     <h2>Add Words Manually</h2>
@@ -1097,6 +1137,127 @@ function importExtracted(){
   save(); renderWords(); renderLessonPills(); renderQPills();
   toast(`Added ${added} words from Lesson ${lesson}!`,'success');
   extractedWords=[]; renderExtracted();
+}
+
+// ── OCR / Camera import ────────────────────────────────────────────────────
+let ocrWords=[];
+
+function handleOCRImage(evt){
+  const file=evt.target.files[0]; if(!file)return;
+  evt.target.value=''; // allow re-selecting same file
+  const url=URL.createObjectURL(file);
+  const img=document.getElementById('ocr-preview');
+  img.src=url;
+  document.getElementById('ocr-area').style.display='block';
+  document.getElementById('ocr-words-area').style.display='none';
+  document.getElementById('ocr-prog-wrap').style.display='block';
+  document.getElementById('ocr-prog').style.width='0%';
+  document.getElementById('ocr-status').textContent='Starting OCR…';
+  runOCR(url);
+}
+
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    if(document.querySelector(`script[src="${src}"]`)){resolve();return;}
+    const s=document.createElement('script');
+    s.src=src; s.onload=resolve; s.onerror=reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function runOCR(imageUrl){
+  try{
+    if(!window.Tesseract){
+      document.getElementById('ocr-status').textContent='Loading OCR engine…';
+      await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+    }
+    document.getElementById('ocr-status').textContent='Recognizing text (Russian + English)…';
+    const {data:{text}}=await Tesseract.recognize(imageUrl,'rus+eng',{
+      logger:m=>{
+        if(m.status==='loading language traineddata'){
+          document.getElementById('ocr-status').textContent='Downloading language model (first use only, ~5 MB)…';
+        } else if(m.status==='recognizing text'){
+          const pct=Math.round(m.progress*100);
+          document.getElementById('ocr-prog').style.width=pct+'%';
+          document.getElementById('ocr-status').textContent=`Recognizing… ${pct}%`;
+        }
+      }
+    });
+    document.getElementById('ocr-prog-wrap').style.display='none';
+    document.getElementById('ocr-raw').value=text;
+    parseOCRText(text);
+  }catch(err){
+    document.getElementById('ocr-prog-wrap').style.display='none';
+    document.getElementById('ocr-status').textContent='⚠ OCR error: '+err.message;
+    console.error(err);
+  }
+}
+
+function parseOCRText(text){
+  const CYR=/[\u0400-\u04FF]/; const LAT=/[a-zA-Z]/;
+  const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>1);
+
+  // Reuse existing PDF vocab parser
+  const lineObjs=lines.map((l,i)=>({text:l,y:i,x:0,items:[]}));
+  ocrWords=parseVocab(lineObjs);
+
+  // Supplemental pass: looser separators (dash, pipe, tab, 2+ spaces)
+  const seen=new Set(ocrWords.map(w=>w.ru+'|'+w.en));
+  lines.forEach(line=>{
+    const parts=line.split(/\s*[—–\-|]\s*|\t|\s{3,}/).map(p=>p.trim()).filter(p=>p);
+    if(parts.length>=2){
+      const ru=parts[0], en=parts.slice(1).join(' ').trim();
+      if(CYR.test(ru)&&LAT.test(en)&&ru.length>=2&&en.length>=2){
+        const key=ru+'|'+en;
+        if(!seen.has(key)){seen.add(key);ocrWords.push({ru:cleanW(ru),en:cleanW(en),grammar:extGram(ru+en)});}
+      }
+    }
+  });
+
+  const msg=ocrWords.length>0
+    ?`Found ${ocrWords.length} vocabulary pair${ocrWords.length===1?'':'s'}.`
+    :'No pairs detected automatically. Edit the raw text below into "Russian — English" format and tap ↺ Re-parse.';
+  document.getElementById('ocr-status').textContent=msg;
+  document.getElementById('ocr-words-area').style.display='block';
+  renderOCRWords();
+}
+
+function renderOCRWords(){
+  const list=document.getElementById('ocr-list');
+  document.getElementById('ocr-count').textContent=`${ocrWords.length} word${ocrWords.length===1?'':'s'}`;
+  if(!ocrWords.length){
+    list.innerHTML='<div style="padding:12px;font-size:13px;color:var(--text2)">No pairs found — use the raw text field below.</div>';
+    return;
+  }
+  list.innerHTML=ocrWords.map((w,i)=>`
+    <div class="ext-item">
+      <span class="ext-ru">${esc(w.ru)}</span>
+      <span class="ext-en">${esc(w.en)}${w.grammar?' <small>'+esc(w.grammar)+'</small>':''}</span>
+      <button class="btn btn-danger btn-sm" onclick="rmOCR(${i})" style="padding:3px 8px;font-size:11px">✕</button>
+    </div>`).join('');
+}
+
+function rmOCR(i){ocrWords.splice(i,1);renderOCRWords();}
+
+function reparseOCR(){
+  const text=document.getElementById('ocr-raw').value;
+  parseOCRText(text);
+}
+
+function importOCR(){
+  if(!ocrWords.length){toast('Nothing to import','error');return;}
+  const lesson=parseInt(document.getElementById('ocr-lesson').value)||1;
+  let added=0;
+  ocrWords.forEach(w=>{
+    if(!vocab.some(v=>v.ru===w.ru&&v.lesson===lesson)){
+      vocab.push({id:uid(),ru:w.ru,en:w.en,grammar:w.grammar||'',lesson,status:'new',reviews:0,easiness:2.5,interval:1});
+      added++;
+    }
+  });
+  save(); renderWords(); renderLessonPills(); renderQPills();
+  toast(`Added ${added} word${added===1?'':'s'} to Lesson ${lesson}!`,'success');
+  ocrWords=[]; renderOCRWords();
+  document.getElementById('ocr-area').style.display='none';
 }
 
 // ── Manual import ─────────────────────────────────────────────────────────
